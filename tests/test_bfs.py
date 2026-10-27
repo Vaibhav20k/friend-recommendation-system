@@ -235,3 +235,24 @@ def test_bfs_complete_graph_k4():
                 assert dist == 1
                 assert path == [nodes[i], nodes[j]]
 
+
+def test_networkx_agreement_on_50_random_pairs():
+    """Verify exact agreement between manual BFS and NetworkX oracle across 50 random pairs on a generated graph."""
+    import random
+    from data.generate_dataset import generate_campus_dataset
+    from core.bfs import verify_with_networkx
+
+    dataset = generate_campus_dataset(num_students=50, seed=123)
+    graph = SocialGraph()
+    for u in dataset["users"]:
+        graph.add_user(u["id"])
+    for u, v in dataset["friendships"]:
+        graph.add_friendship(u, v)
+
+    all_users = list(graph.get_all_users())
+    random.seed(999)
+    for _ in range(50):
+        u = random.choice(all_users)
+        v = random.choice(all_users)
+        assert verify_with_networkx(graph, u, v) is True
+

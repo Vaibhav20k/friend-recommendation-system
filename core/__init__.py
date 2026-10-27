@@ -2,12 +2,14 @@
 
 from core.graph import SocialGraph
 from core.user_manager import UserManager
+from core.hash_table import HashTable
 from core.recommendation import get_friend_recommendations
 from core.bfs import find_shortest_connection
 
 __all__ = [
     "SocialGraph",
     "UserManager",
+    "HashTable",
     "get_friend_recommendations",
     "find_shortest_connection",
 ]

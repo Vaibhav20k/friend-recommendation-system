@@ -14,7 +14,8 @@
 5. [Section 5: System Architecture & Persistence](#section-5-system-architecture--persistence)
 6. [Section 6: Common Viva Trap Questions & Model Answers](#section-6-common-viva-trap-questions--model-answers)
 7. [Section 7: Real-World Industry Comparisons](#section-7-real-world-industry-comparisons)
-8. [Quick Revision Summary Sheet](#quick-revision-summary-sheet)
+8. [Section 8: CampusConnect Advanced Viva Deep-Dives](#section-8-campusconnect-advanced-viva-deep-dives)
+9. [Quick Revision Summary Sheet](#quick-revision-summary-sheet)
 
 ---
 
@@ -680,6 +681,91 @@ LinkedIn explicitly reveals the graph traversal depth on every user profile:
   - **Bidirectional BFS** runs two simultaneous searches: forward from $s$ and backward from $t$, stopping when the two wavefronts intersect.
   - Complexity drops to $2 \times O(b^{d/2})$. At $d = 4$, $2 \times 400^2 = 320,000$ operations! This is an **$80,000\times$ speedup**.
 - **Search Infrastructure**: LinkedIn utilizes a specialized real-time distributed graph search index called **Galene** and **Apache Lucene** extensions to resolve network degrees in sub-10 milliseconds.
+
+---
+
+## Section 8: CampusConnect Advanced Viva Deep-Dives
+
+### 8.1 Hand-Written Hash Table: Chaining vs. Open Addressing
+
+#### Examiner Question: "How does your custom HashTable work, and why did you choose Separate Chaining over Open Addressing?"
+**Model Answer:**
+> "Our custom `HashTable` (`core/hash_table.py`) is implemented from first principles in pure Python to demonstrate internal hash table mechanics.
+> 
+> We chose **Separate Chaining** over **Open Addressing** (such as linear or quadratic probing) for several critical reasons:
+> 1. **Robust Degradation Under High Load**: In separate chaining, if the load factor exceeds 1.0, the table does not fail or refuse inserts; buckets simply chain longer, with lookup time degrading gracefully to $O(1 + \alpha)$. In contrast, open addressing completely fails when $\alpha \to 1.0$ because no empty slots remain.
+> 2. **Simplified Deletions**: Deleting a key in separate chaining is a straightforward node/item removal from the bucket list in $O(\text{chain length})$ time. In open addressing, deletion requires placing special 'tombstone' / `DELETED` markers to prevent breaking probe sequences for subsequent searches, requiring complex garbage collection and periodic table re-allocation.
+> 3. **Cache & Memory Isolation**: Separate chaining keeps the primary bucket array compact while dynamically allocating list nodes only as elements are inserted."
+
+#### Examiner Question: "What is the Load Factor, and why is 0.75 the standard rehashing threshold?"
+**Model Answer:**
+> "The **Load Factor** $\alpha$ is defined as the ratio of stored elements $n$ to bucket capacity $m$:
+> $$\alpha = \frac{n}{m}$$
+> Under uniform hashing, the expected length of each bucket chain is exactly $\alpha$.
+> 
+> The threshold of **0.75** (used in Java's `HashMap`, Python's `dict`, and our `HashTable`) strikes an empirically optimal mathematical trade-off:
+> - If $\alpha$ is too high (e.g., $1.5$ or $2.0$), average chain lengths grow, and lookups slow down toward $O(n)$ due to excessive sequential traversal.
+> - If $\alpha$ is too low (e.g., $0.25$), the array is resized too frequently, wasting 75% of allocated memory slots on empty buckets.
+> - At $\alpha = 0.75$, Poisson distribution predicts that only about $12\%$ of buckets have chains longer than 1, guaranteeing average $O(1)$ operations with modest memory overhead."
+
+#### Examiner Question: "How does your Polynomial Rolling Hash function work?"
+**Model Answer:**
+> "Our hash function uses a polynomial rolling hash on character strings:
+> $$H(s) = \left( \sum_{i=0}^{k-1} \text{ord}(s[i]) \times p^i \right) \pmod m$$
+> We choose $p = 31$ because:
+> 1. **Odd Prime**: Choosing an odd prime multiplier ensures that multiplying by $p$ does not cause bits to simply shift out and disappear (unlike powers of 2 such as 16 or 32).
+> 2. **Character Entropy**: For typical ASCII lowercase usernames ('aarav', 'zara'), powers of 31 cleanly disperse permutations, anagrams ('cat' vs 'act'), and prefix variations into distinct hash values across bucket space."
+
+---
+
+### 8.2 Jaccard Similarity of Student Interest Profiles
+
+#### Examiner Question: "How does Jaccard Similarity improve friend recommendations?"
+**Model Answer:**
+> "While counting mutual friends (triadic closure) is effective, it fails when two students have the same mutual friend count. For instance, Student A may share 2 mutual friends with Candidate B (who loves cricket) and 2 mutual friends with Candidate C (who loves AI and hackathons).
+> 
+> To break ties meaningfully in a college environment, we compute the **Jaccard Similarity Coefficient** over student interest tag sets:
+> $$J(A, B) = \frac{|\text{Interests}(A) \cap \text{Interests}(B)|}{|\text{Interests}(A) \cup \text{Interests}(B)|}$$
+> - If $A$ and $B$ share identical interests, $J(A, B) = 1.0$.
+> - If $A$ and $B$ share zero interests, $J(A, B) = 0.0$.
+> 
+> **Why Jaccard over Cosine or Euclidean Distance?**
+> Student interest tags are binary sets of categorical labels ('coding', 'music', 'dance'). Cosine similarity and Euclidean distance require high-dimensional sparse vector embeddings, whereas Jaccard similarity directly computes set intersections and unions using fast Python `set` operations in $O(|A| + |B|)$ time."
+
+---
+
+### 8.3 LinkedIn-Style Degree Levels & Connected Components
+
+#### Examiner Question: "How did you implement LinkedIn-style 1st, 2nd, and 3rd degree levels?"
+**Model Answer:**
+> "In `core/bfs.py`, our `bfs_levels(graph, src)` function executes a full level-order BFS traversal using `collections.deque([(src, 0)])`.
+> - Distance 1 corresponds to **1st Degree (Direct Friends)**.
+> - Distance 2 corresponds to **2nd Degree (Mutual Friends)**.
+> - Distance 3+ corresponds to **3rd Degree+ (Extended College Network)**.
+> 
+> Each layer is aggregated into a dictionary `Dict[int, List[str]]` mapping hop distance to a sorted list of student IDs, running in optimal $O(V + E)$ time."
+
+#### Examiner Question: "How are Connected Components identified without external libraries?"
+**Model Answer:**
+> "In `core/graph.py`, `connected_components()` partitions the campus network from first principles:
+> 1. We maintain a global `visited` set.
+> 2. We iterate through every vertex $v \in V$. If $v \notin visited$, $v$ is the root of a new connected component.
+> 3. We run a BFS from $v$, marking all reachable nodes and appending them to the current component list.
+> 4. We repeat until all vertices are visited.
+> 
+> This reveals isolated students (components of size 1) and separate communities (e.g. clubs or departments isolated from the main campus network) in $O(V + E)$ time."
+
+---
+
+### 8.4 Academic Verification: Why Verify with NetworkX?
+
+#### Examiner Question: "Why did you use NetworkX, and did you just call NetworkX to compute shortest paths?"
+**Model Answer:**
+> "No, absolutely not. Every algorithm shown to the user—the Adjacency List graph representation, Breadth-First Search, LinkedIn degree levels, custom HashTable, and Jaccard recommendations—is **hand-written from scratch in pure Python**.
+> 
+> NetworkX is used in our project for two strictly limited, academically honest purposes:
+> 1. **Visual Spring Layout**: NetworkX provides the Fruchterman-Reingold force-directed layout coordinates (`nx.spring_layout`) for canvas positioning.
+> 2. **Automated Verification Oracle**: In our UI and test suite (`verify_with_networkx`), we cross-check our manual BFS distance against `nx.shortest_path_length(G, u, v)` as an automated truth oracle. If our manual BFS distance equals NetworkX's distance, the UI displays a green **✔ Verified with NetworkX** badge. This proves to examiners that our manual algorithm is mathematically equivalent to industry-standard implementations!"
 
 ---
 

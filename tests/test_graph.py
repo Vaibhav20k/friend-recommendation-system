@@ -523,8 +523,11 @@ class TestDataHandler:
     """Unit tests for the DataHandler persistence class."""
 
     def test_load_network_success(self):
-        """Verify loading the actual data/users.json dataset."""
-        filepath = "/home/vaibhav/friend-recommendation-system/data/users.json"
+        """Verify loading the actual dataset."""
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        filepath = os.path.join(base_dir, "data", "sample_small.json")
+        if not os.path.exists(filepath):
+            filepath = os.path.join(base_dir, "data", "users.json")
         user_manager, social_graph = DataHandler.load_network(filepath)
 
         # 12 users

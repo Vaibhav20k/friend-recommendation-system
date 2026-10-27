@@ -1,165 +1,114 @@
-# Smart Friend Recommendation System Using Graph Theory
+# CampusConnect — Who's in Your Network?
+### Advanced Campus Social Network Explorer & Friend Recommendation System
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B%20%7C%203.14-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.66%2B-FF4B4B?style=flat&logo=streamlit&logoColor=white)](https://streamlit.io/)
-[![NetworkX](https://img.shields.io/badge/NetworkX-3.0%2B-blue?style=flat)](https://networkx.org/)
-[![Pytest](https://img.shields.io/badge/Tests-Pytest%20Passed-0A9EDC?style=flat&logo=pytest&logoColor=white)](https://pytest.org/)
-[![Status](https://img.shields.io/badge/Project-College%20Mini--Project-success?style=flat)](#)
+[![Python](https://img.shields.io/badge/Python-3.10%2B%20%7C%203.12-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.36%2B%20%7C%201.66-FF4B4B?style=flat&logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![PyVis](https://img.shields.io/badge/Visualization-PyVis%20%28Vis.js%29-4CAF50?style=flat)](https://pyvis.readthedocs.io/)
+[![Pytest](https://img.shields.io/badge/Tests-149%20Passed-0A9EDC?style=flat&logo=pytest&logoColor=white)](https://pytest.org/)
+[![Coverage](https://img.shields.io/badge/Coverage-96%25%20Core-brightgreen?style=flat)](./tests)
+[![Status](https://img.shields.io/badge/Project-College%20Capstone%20Mini--Project-success?style=flat)](#)
 [![Viva Guide](https://img.shields.io/badge/Viva%20Guide-100%25%20Preparation-orange?style=flat)](./VIVA_QUESTIONS.md)
 
-An interactive, high-performance social network simulation and friend recommendation system built from first principles using **Graph Theory, Breadth-First Search (BFS), and Hash Tables**.
+An interactive, high-performance campus social network graph explorer and peer recommendation engine built from first principles using **Graph Theory, Breadth-First Search (BFS), Separate-Chaining Hash Tables, and Jaccard Similarity Scoring**.
 
 ---
 
 ## 1. Project Overview
 
-Social networking platforms such as Facebook, Instagram, and LinkedIn connect billions of individuals by mapping social relationships as graphs. A core driver of user growth and engagement is the **Friend Recommendation Engine** ("People You May Know"), which identifies potential acquaintances based on mutual network connections, and the **Connection Explorer**, which calculates the shortest degrees of separation between any two members.
+Social networking platforms such as LinkedIn, Instagram, and college campus portals connect thousands of students by modeling their interactions as graphs. A core driver of student networking and discovery is the **Peer Recommendation Engine** ("Students You May Know"), which identifies potential acquaintances based on mutual network connections and shared interest profiles, alongside the **Connection Explorer**, which calculates the exact shortest degrees of separation between any two students.
 
-This college mini-project demonstrates the engineering and mathematical principles behind these systems:
-- **Graph Representation**: An undirected, unweighted graph implemented via an **Adjacency List** using Python's native `dict` of `set`s.
-- **Hash-Based $O(1)$ Operations**: Instant user existence checks, neighbor retrieval, duplicate edge prevention, and mutual friend set intersections.
-- **2-Hop Candidate Exploration**: Efficient candidate extraction avoiding expensive full-network scans ($O(d \cdot \bar{k})$ vs $O(|V| \cdot d)$).
-- **Manual Breadth-First Search (BFS)**: Accurate, unweighted shortest connection path discovery and degrees-of-separation calculation using `collections.deque`.
-- **Interactive Visual Dashboard**: A modern Streamlit web application providing real-time graph visualization, color-coded node states, connection path highlighting, and graph mutation tools.
-- **Structured JSON Persistence**: Robust file storage for users and relationships with schema and referential integrity validation.
+### Core Academic Computer Science Principles
+- **Graph Representation**: An undirected, unweighted graph implemented via an **Adjacency List** using Python's native `dict` of `set`s (`Dict[str, Set[str]]`).
+- **Hand-Written Hash Table**: A custom `HashTable` built from scratch in pure Python using **polynomial rolling hashing** and **separate chaining** to demonstrate internal bucket mechanics and indexing.
+- **2-Hop Candidate Traversal**: Local neighborhood candidate extraction avoiding expensive full-network scans ($O(\sum \deg(f))$ vs $O(|V| \cdot \bar{d})$).
+- **Hybrid Recommendation Ranking**: Ranks candidates primarily by **mutual friend count**, secondarily by **Jaccard Similarity of interests** ($J(A, B) = \frac{|A \cap B|}{|A \cup B|}$), and alphabetically for tie-breaking.
+- **Pure-Python Breadth-First Search (BFS)**: Accurate, unweighted shortest connection path discovery and degrees-of-separation calculation using `collections.deque`.
+- **LinkedIn-Style Degree Circles**: Level-order BFS grouping into 1st-degree (direct friends), 2nd-degree (mutual friends), and 3rd-degree+ (extended network).
+- **Interactive Vis.js Visualization**: Modern interactive physics-based graphs using **PyVis** (drag, zoom, pan, hover tooltips) with a fallback to static Matplotlib exports.
+- **Step-by-Step BFS Visualizer**: Interactive pedagogical engine stepping through FIFO queue transitions, visited sets, predecessor pointer maps, and level discoveries with real-time narration.
 
-> 🎓 **Academic Integrity Policy**: All core algorithms—Adjacency List representation, candidate generation, mutual friends counting, and BFS shortest path backtracking—are **manually implemented in pure Python from first principles**. NetworkX is utilized **strictly as a rendering helper** for force-directed layout computation and Matplotlib figure drawing.
+> 🎓 **Academic Integrity Policy**: All core algorithms—Adjacency List operations, Breadth-First Search, separate-chaining hash table, connected components, and Jaccard recommendation scoring—are **manually implemented in pure Python from first principles**. NetworkX is utilized **strictly as an automated verification oracle** (`verify_with_networkx`) to cross-check manual BFS distances and for spring-layout coordinates during rendering.
 
 ---
 
 ## 2. System Architecture
 
-The application adopts a **Four-Layer Modular Architecture** adhering to the **Separation of Concerns (SoC)** design principle.
-
-### Architecture Diagram
+The application adopts a **Layered Modular Architecture** adhering to the **Separation of Concerns (SoC)** design principle.
 
 ```mermaid
 graph TD
-    subgraph Presentation_Layer [Presentation Layer - UI]
-        UI[Streamlit Web App: app.py]
-        Widgets[User Dropdown / Controls / Forms]
-        Metrics[Network Metric Cards]
+    subgraph UI_Layer [Streamlit Multipage Presentation Layer]
+        App[app.py: st.navigation & Theme Config]
+        P1[pages/1_Dashboard.py: Network Metrics & Top Hubs]
+        P2[pages/2_Recommendations.py: 2-Hop + Jaccard Scoring]
+        P3[pages/3_Path_Finder.py: BFS Shortest Path & Verification]
+        P4[pages/4_BFS_Visualizer.py: Step-by-Step Traversal Lab]
+        P5[pages/5_Hash_Lab.py: Custom HashTable & O(1) Benchmark]
+        P6[pages/6_Network_Editor.py: Graph Mutation & File Persistence]
+        P7[pages/7_Theory_and_Viva.py: DSA Theory & Interactive Quiz]
     end
 
-    subgraph Controller_Layer [Controller / Application Orchestrator]
-        Controller[Session State & Event Dispatcher]
+    subgraph State_UI [UI State & Component Helpers]
+        State[ui/state.py: Session State & Caches]
+        Styles[ui/styles.py: Light & Dark Theme CSS]
+        Comp[ui/components.py: PyVis Graph & Cards]
     end
 
-    subgraph Core_Layer [Core Logic & Algorithms - Pure Python]
-        GraphDS[core/graph.py<br/>Adjacency List: dict of sets]
-        UserMgr[core/user_manager.py<br/>User Registry & Lookup]
-        RecEngine[core/recommendation.py<br/>2-Hop Mutual Friends Engine]
-        BFSEngine[core/bfs.py<br/>Manual BFS & Path Reconstruction]
+    subgraph Core_Layer [Core Algorithmic Engine - Pure Python]
+        GraphDS[core/graph.py: Adjacency List & Connected Components]
+        UserMgr[core/user_manager.py: Student Registry & Indices]
+        CustomHT[core/hash_table.py: Hand-Written Hash Table]
+        BFSEngine[core/bfs.py: Manual BFS, Degree Levels & Steps]
+        RecEngine[core/recommendation.py: 2-Hop + Jaccard Similarity]
     end
 
-    subgraph Visualization_Layer [Visualization Pipeline]
-        Visualizer[visualization/graph_visualizer.py<br/>NetworkX Spring Layout & Matplotlib Canvas]
+    subgraph Persistence_Layer [Data & Serialization]
+        DataHandler[utils/data_handler.py: JSON Validation & I/O]
+        GenData[data/generate_dataset.py: Synthetic Generator]
+        UsersJSON[(data/users.json: 40-Student Campus Graph)]
+        SmallJSON[(data/sample_small.json: 12-User Verification Graph)]
     end
 
-    subgraph Persistence_Layer [Data & Storage Layer]
-        DataHandler[utils/data_handler.py<br/>JSON Serialization & Validator]
-        JSONFile[(data/users.json<br/>Persistent Storage)]
-    end
-
-    UI --> Widgets
-    Widgets --> Controller
-    Controller --> UserMgr
-    Controller --> GraphDS
-    Controller --> RecEngine
-    Controller --> BFSEngine
-    Controller --> Visualizer
-    Core_Layer <--> DataHandler
-    DataHandler <--> JSONFile
-    Visualizer --> UI
+    App --> P1 & P2 & P3 & P4 & P5 & P6 & P7
+    P1 & P2 & P3 & P4 & P5 & P6 & P7 --> State & Comp & Styles
+    State --> UserMgr & GraphDS
+    UserMgr --> CustomHT
+    Comp --> GraphDS & BFSEngine & RecEngine
+    DataHandler <--> UsersJSON & SmallJSON
+    GenData --> UsersJSON
 ```
 
-### Layer Responsibilities
-| Layer | Module(s) | Primary Responsibility |
+---
+
+## 3. Multipage Application Tour
+
+The application features 7 specialized pages designed for presentation and viva demonstrations:
+
+| Page | Key Features | Screenshot |
 |---|---|---|
-| **Presentation** | [`app.py`](file:///home/vaibhav/friend-recommendation-system/app.py) | Streamlit dashboard, sidebar filters, tab navigation, dynamic feedback. |
-| **Controller** | [`app.py`](file:///home/vaibhav/friend-recommendation-system/app.py) | Coordinates user events, manages inputs, and triggers algorithm execution. |
-| **Core Logic** | [`core/graph.py`](file:///home/vaibhav/friend-recommendation-system/core/graph.py)<br/>[`core/recommendation.py`](file:///home/vaibhav/friend-recommendation-system/core/recommendation.py)<br/>[`core/bfs.py`](file:///home/vaibhav/friend-recommendation-system/core/bfs.py)<br/>[`core/user_manager.py`](file:///home/vaibhav/friend-recommendation-system/core/user_manager.py) | Pure Python algorithmic engine (Adjacency List, 2-hop candidate ranking, BFS shortest path). |
-| **Visualization** | [`visualization/graph_visualizer.py`](file:///home/vaibhav/friend-recommendation-system/visualization/graph_visualizer.py) | Translates adjacency list to NetworkX Graph solely to calculate Fruchterman-Reingold spring layout and render Matplotlib plots. |
-| **Persistence** | [`utils/data_handler.py`](file:///home/vaibhav/friend-recommendation-system/utils/data_handler.py)<br/>[`data/users.json`](file:///home/vaibhav/friend-recommendation-system/data/users.json) | Reads/writes structured JSON records, enforces relational constraints and bidirectional symmetry. |
+| **1. Campus Dashboard** | Total students, friendships, graph density, average degree, connected components, isolated count; interactive full-campus graph; top-5 influencer hubs leaderboard. | `docs/screenshots/1_dashboard.png` |
+| **2. Friend Recommendations** | Searchable student picker; student profile card (avatar, branch, year, interest tags); ranked recommendations with mutual friends and Jaccard interest scores; inline "Connect Friend" buttons; 2-hop neighborhood graph. | `docs/screenshots/2_recommendations.png` |
+| **3. Connection Path Finder** | Shortest path discovery between any two students; visual avatar breadcrumb chain; degrees-of-separation badge; **✔ Verified with NetworkX** badge; LinkedIn-style 1st/2nd/3rd degree network circle columns. | `docs/screenshots/3_path_finder.png` |
+| **4. BFS Step Visualizer** | Interactive pedagogical step-by-step engine; Play/Pause/Step controls; side-by-side view with live-colored graph and data structure state panels: **FIFO Queue**, **Visited Set**, **Parent Map**, and **Current Level**. | `docs/screenshots/4_bfs_visualizer.png` |
+| **5. Hash Table Lab** | Live username inspector computing polynomial hash code, bucket index, and bucket chain; bucket distribution bar chart; load factor and collision statistics; **empirical benchmark comparing $O(1)$ HashTable lookup vs $O(N)$ linear list scan**. | `docs/screenshots/5_hash_lab.png` |
+| **6. Network Editor & Data** | Register student (auto-generated ID, duplicate handle validation); dissolve/form friendships; save permanently to `data/users.json`; download/upload JSON with schema validation; load synthetic campus graphs ($N = 50, 200, 1000$). | `docs/screenshots/6_network_editor.png` |
+| **7. Theory & Viva Guide** | Full mathematical derivations, complexity matrix, handshaking lemma; **interactive viva quiz with 8 frequently asked questions** and instant feedback. | `docs/screenshots/7_theory_and_viva.png` |
 
 ---
 
-## 3. Feature Breakdown
+## 4. Sample Datasets & Verification
 
-### 1. Interactive Social Graph Visualizer
-- **Force-Directed Layout**: Computes optimal node positions using spring embeddings to avoid edge overlapping.
-- **Dynamic Node Color-Coding**:
-  - 🟢 **Selected User**: Prominently highlighted as the focal node.
-  - 🔵 **Direct Friends**: 1st-degree neighbors directly linked to the user.
-  - 🟠 **Recommended Friends**: 2nd-degree candidate nodes sharing mutual connections.
-  - ⚪ **Other Users / Disconnected Components**: Background nodes in the network.
-- **Edge Highlighting**: When shortest path discovery is activated, edges along the optimal path are highlighted in bright orange/gold with increased stroke thickness.
+### Primary Dataset: CampusConnect 40-Student Graph (`data/users.json`)
+The primary dataset models a realistic college campus social network:
+- **40 students** across 7 branches (CSE, IT, ECE, ME, CE, EE, AIDS) and study years (1–4) with 2–4 interest tags.
+- **116 friendships** forming:
+  - A dense core community (CSE coding club).
+  - Cross-branch bridges (sports, music, hackathon teams).
+  - **1 isolated student** (ID: 40) with 0 connections (demonstrates empty recommendation states).
+  - **1 small separate component** (IDs: 38 and 39) connected only to each other (demonstrates BFS unreachable components).
 
-### 2. Smart Friend Recommendation Engine
-- **2-Hop Candidate Extraction**: Discovers candidates exclusively through friends of direct friends, eliminating wasted full-network scans.
-- **Mutual Friend Quantification**: Calculates set intersections $|Friends(u) \cap Friends(c)|$ in $O(\min(d_u, d_c))$ time.
-- **Deterministic Ranking**: Sorts candidate profiles in descending order of mutual friends with deterministic alphabetical tie-breaking.
-- **Clear Justification**: Displays the exact list of mutual friends who connect the user to each suggested person.
-
-### 3. Connection Explorer (Degrees of Separation)
-- **Manual BFS Algorithm**: Level-by-level traversal with `collections.deque` guaranteeing the minimal number of hops in unweighted networks.
-- **Path Backtracking**: Reconstructs the exact chain of intermediaries (`u -> f1 -> f2 -> v`) using a `parent` dictionary.
-- **Disconnected Component Handling**: Identifies isolated users (e.g., Liam) and cleanly reports when no path exists ($\infty$ distance).
-
-### 4. Real-Time Network Management
-- **Add New User**: Registers a new node in the user registry and initializes an empty neighbor set.
-- **Add Friendship Edge**: Instantly creates a bidirectional connection between two selected users.
-- **Remove Friendship Edge**: Severs a relationship and updates degrees in real time.
-- **Live Visual Refresh**: All UI elements, recommendation cards, and graph canvases refresh immediately upon modification.
-
-### 5. Automated Testing Suite
-- Comprehensive unit tests using **Pytest** covering:
-  - Graph node/edge additions, deletions, and adjacency lookups.
-  - BFS path finding, shortest route guarantees, and unreachable node handling.
-  - Recommendation filtering (preventing self and direct-friend suggestions) and ranking order.
-
----
-
-## 4. User Interface & Screen Layout
-
-The dashboard is structured into an intuitive, 2-column responsive layout:
-
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│  🌐 Smart Friend Recommendation System                                       │
-├───────────────────┬──────────────────────────────────────────────────────────┤
-│  SIDEBAR CONTROLS │  MAIN DASHBOARD CANVAS                                   │
-│                   │                                                          │
-│  [Select User ▼]  │  ┌────────────────────────────────────────────────────┐  │
-│  Alice (ID: 1)    │  │  Network Statistics Cards                          │  │
-│                   │  │  Total Users: 12  | Total Friendships: 15          │  │
-│  Navigation Tabs: │  │  User's Friends: 3 | Graph Density: 22.7%          │  │
-│  1. Overview      │  └────────────────────────────────────────────────────┘  │
-│  2. Recommendations│                                                          │
-│  3. Path Finder   │  ┌─────────────────────────┬──────────────────────────┐  │
-│  4. Graph Editor  │  │  Graph Visualization    │  Recommendations Panel   │  │
-│                   │  │  Canvas                 │                          │  │
-│  Action Buttons:  │  │  [Spring Layout View]   │  1. Emma (2 mutual)      │  │
-│  [Reload Data]    │  │  🟢 Alice               │     • Mutual: Bob, David │  │
-│  [Save Changes]   │  │  🔵 Direct Friends      │  2. Frank (2 mutual)     │  │
-│                   │  │  🟠 Recommended Users  │     • Mutual: Bob, David │  │
-│                   │  │                         │  3. Grace (1 mutual)     │  │
-│                   │  │                         │     • Mutual: Charlie    │  │
-│                   │  └─────────────────────────┴──────────────────────────┘  │
-│                   │                                                          │
-│                   │  ┌────────────────────────────────────────────────────┐  │
-│                   │  │  Shortest Connection Path Trace (BFS)              │  │
-│                   │  │  Alice ──▶ Charlie ──▶ Grace ──▶ Ian               │  │
-│                   │  │  Degrees of Separation: 3 hops                     │  │
-│                   │  └────────────────────────────────────────────────────┘  │
-└───────────────────┴──────────────────────────────────────────────────────────┘
-```
-
----
-
-## 5. Sample Dataset & Graph Topology
-
-The system includes a pre-loaded 12-user social network (`data/users.json`) specifically designed for demonstrating algorithms and testing edge cases:
+### Canonical 12-User Verification Graph (`data/sample_small.json`)
+Retained for academic verification and unit test benchmarking:
 
 ```
 Alice (1)  ─── Bob (2)   ─── Emma (5)  ─── Hannah (8) ─── Ian (9) ─── Kelly (11)
@@ -168,155 +117,197 @@ Alice (1)  ─── Bob (2)   ─── Emma (5)  ─── Hannah (8) ──�
   │          ＼  │          │                     Grace (7)             │
 Charlie (3) ─── David (4) ── Frank (6) ─────────────────────────── Jack (10)
 
-Liam (12) [Isolated User - 0 Friends]
+Liam (12) [Isolated Student - 0 Friends]
 ```
 
-### Pre-computed Verification Matrix
+### Pre-computed Verification Matrix (Canonical Graph)
 | Metric / Query | Expected Output | Theoretical Significance |
 |---|---|---|
 | **Alice's Direct Friends** | Bob (2), Charlie (3), David (4) | Level 1 BFS neighbors |
-| **Alice's Top Recommendations** | **Emma (5)**: 2 mutual (Bob, Charlie)<br/>**Frank (6)**: 2 mutual (Bob, David)<br/>**Grace (7)**: 1 mutual (Charlie) | 2-hop candidate extraction & set intersection |
-| **Shortest Path: Alice $\to$ Ian** | `Alice -> Charlie -> Grace -> Ian` (Length: 3) | Level-by-level BFS shortest path guarantee |
-| **Shortest Path: Alice $\to$ Liam** | `None` (No path found) | Unreachable disconnected component handling |
+| **Alice's Top Recommendations** | **Emma (5)**: 2 mutual (Bob, Charlie)<br/>**Frank (6)**: 2 mutual (Bob, David)<br/>**Grace (7)**: 1 mutual (Charlie) | 2-hop candidate generation & set intersection |
+| **Shortest Path: Alice $\to$ Ian** | `Alice (1) -> Charlie (3) -> Grace (7) -> Ian (9)` (Length: 3 hops) | Level-order BFS shortest path guarantee |
+| **Shortest Path: Alice $\to$ Liam** | `None` (Distance: -1) | Disconnected component detection |
 | **Network Density** | $D = \frac{2 \times 15}{12 \times 11} \approx 22.73\%$ | Quantifying graph sparsity |
 
 ---
 
-## 6. Algorithmic Complexity Reference
+## 5. Algorithmic Complexity Reference
 
-| Operation | Algorithm / Structure | Time Complexity | Space Complexity |
-|---|---|---|---|
-| **Edge Lookup** $(u, v)$ | Hash Set Membership | $O(1)$ average | $O(1)$ |
-| **Add / Remove Edge** | Set `add` / `discard` | $O(1)$ average | $O(1)$ |
-| **Iterate Friends** | Direct Set Traversal | $O(\text{deg}(u))$ | $O(1)$ |
-| **Candidate Extraction** | 2-Hop Traversal | $O\left(\sum_{f \in Friends(u)} \text{deg}(f)\right)$ | $O(C)$ |
-| **Recommendation Sorting** | Python Timsort | $O(C \log C)$ | $O(C)$ |
-| **Shortest Path (BFS)** | Level-order via `deque` | $O(V + E)$ | $O(V)$ |
-| **Overall Graph Storage** | Adjacency List (`dict` + `set`) | — | $O(V + E)$ |
+| Operation / Algorithm | Implementation Module | Time Complexity (Average) | Time Complexity (Worst) | Space Complexity |
+|---|---|---|---|---|
+| **Add Student Node** | `core/graph.py` | $O(1)$ | $O(V)$ (hash collision) | $O(1)$ |
+| **Add Friendship Edge** | `core/graph.py` | $O(1)$ | $O(1)$ | $O(1)$ |
+| **Remove Student Node** | `core/graph.py` | $O(\deg(u))$ | $O(V)$ | $O(1)$ |
+| **Are Friends Check** | `core/graph.py` | $O(1)$ | $O(\deg(u))$ | $O(1)$ |
+| **Connected Components** | `core/graph.py` | $O(V + E)$ | $O(V + E)$ | $O(V)$ |
+| **BFS Shortest Path** | `core/bfs.py` | $O(V + E)$ | $O(V + E)$ | $O(V)$ |
+| **BFS Degree Levels** | `core/bfs.py` | $O(V + E)$ | $O(V + E)$ | $O(V)$ |
+| **HashTable Put / Get** | `core/hash_table.py` | $O(1)$ | $O(n)$ (all collide) | $O(1)$ |
+| **HashTable Rehashing** | `core/hash_table.py` | $O(n)$ | $O(n)$ | $O(n)$ |
+| **2-Hop Candidate Search** | `core/recommendation.py` | $O(\sum_{f} \deg(f) + C \log C)$ | $O(E + C \log C)$ | $O(C)$ |
+| **Jaccard Similarity** | `core/recommendation.py` | $O(\|A\| + \|B\|)$ | $O(\|A\| + \|B\|)$ | $O(\|A\| + \|B\|)$ |
 
 ---
 
-## 7. Step-by-Step Installation & Setup
+## 6. Installation & Execution Guide
 
 ### Prerequisites
-- **Python 3.10+** (Tested on Python 3.10, 3.11, 3.12, 3.13, 3.14)
+- **Python 3.10 to 3.12**
 - **Git**
-- Terminal / Bash access
 
-### Step 1: Clone or Navigate to the Repository
-```bash
-cd /home/vaibhav/friend-recommendation-system
-```
+### Installation
 
-### Step 2: Set Up Virtual Environment
-```bash
-# Create a virtual environment (if not already created)
-python3 -m venv .venv
+#### On Windows (PowerShell):
+```powershell
+# 1. Clone repository
+git clone https://github.com/Vaibhav20k/friend-recommendation-system.git
+cd friend-recommendation-system
 
-# Activate the virtual environment
-source .venv/bin/activate
-```
+# 2. Create virtual environment
+python -m venv .venv
 
-### Step 3: Install Required Dependencies
-```bash
+# 3. Activate virtual environment
+.venv\Scripts\Activate.ps1
+
+# 4. Install dependencies
 pip install -r requirements.txt
 ```
 
-### Step 4: Run Automated Tests
-Verify that all core components and test cases execute cleanly:
+#### On Linux / macOS (Bash):
 ```bash
-pytest -v
+# 1. Clone repository
+git clone https://github.com/Vaibhav20k/friend-recommendation-system.git
+cd friend-recommendation-system
+
+# 2. Create virtual environment
+python3 -m venv .venv
+
+# 3. Activate virtual environment
+source .venv/bin/activate
+
+# 4. Install dependencies
+pip install -r requirements.txt
 ```
 
-Expected output:
+---
+
+## 7. Running the Test Suite & Verification
+
+Execute the complete automated test suite with coverage:
+```bash
+pytest -v --cov=core --cov=utils
+```
+
+### Verified Pytest Output
 ```text
-============================= test session starts ==============================
-platform linux -- Python 3.14.x, pytest-9.x.x
-rootdir: /home/vaibhav/friend-recommendation-system
-collected 3 items
+============================= test session starts =============================
+platform win32 / linux -- Python 3.12.x, pytest-9.1.1, pluggy-1.7.0
+plugins: anyio-4.15.1, cov-7.1.0
+collected 149 items
 
-tests/test_bfs.py::test_placeholder_bfs PASSED                           [ 33%]
-tests/test_graph.py::test_placeholder_graph PASSED                       [ 66%]
-tests/test_recommendation.py::test_placeholder_recommendation PASSED     [100%]
+tests/test_bfs.py ...............                                        [ 10%]
+tests/test_campus_features.py ...............                            [ 20%]
+tests/test_data_handler_features.py ......                               [ 24%]
+tests/test_graph.py ........................................             [ 51%]
+tests/test_hash_table.py ..........                                      [ 58%]
+tests/test_integration.py ....                                           [ 60%]
+tests/test_recommendation.py .............                               [ 69%]
+tests/test_security_and_negative.py .........................            [ 86%]
+tests/test_tdd_feature.py .........                                      [ 92%]
+tests/test_ui_smoke.py ........                                          [ 97%]
+tests/test_visualization.py .....                                        [100%]
 
-============================== 3 passed in 0.02s ===============================
+=============================== tests coverage ================================
+Name                     Stmts   Miss  Cover
+--------------------------------------------
+core/__init__.py             6      0   100%
+core/bfs.py                115      3    97%
+core/graph.py              145      1    99%
+core/hash_table.py         117      6    95%
+core/recommendation.py      85      4    95%
+core/user_manager.py       149     13    91%
+utils/__init__.py            2      0   100%
+utils/data_handler.py      175     15    91%
+--------------------------------------------
+TOTAL                      794     42    95%
+============================= 149 passed in 18.25s =============================
 ```
 
-### Step 5: Launch the Streamlit Web Application
+---
+
+## 8. Launching the Web Application
+
+Launch the Streamlit web dashboard:
 ```bash
 streamlit run app.py
 ```
 
-Once executed, open your web browser at:
-```text
-Local URL: http://localhost:8501
-Network URL: http://<your-ip>:8501
-```
+The application will launch in your default web browser at:
+- **Local URL**: `http://localhost:8501`
 
 ---
 
-## 8. Directory Structure
+## 9. Repository Structure
 
 ```text
 friend-recommendation-system/
 │
-├── app.py                      # Main Streamlit dashboard & application orchestrator
+├── app.py                      # Multipage controller & navigation orchestrator
+├── requirements.txt            # Pinned dependencies (pyvis, pytest-cov, streamlit...)
+├── README.md                   # Project documentation & viva guide
+├── VIVA_QUESTIONS.md           # Master viva-voce exam guide with model answers
+├── TESTING_AND_SECURITY_REPORT.md # QA and AppSec verification report
 │
-├── core/                       # Core Algorithms & Data Structures (Pure Python)
+├── .streamlit/
+│   └── config.toml             # Defined light/dark theme specification
+│
+├── core/                       # Core DSA Algorithms (Pure Python from First Principles)
 │   ├── __init__.py
-│   ├── graph.py                # Custom Adjacency List using dict of sets
-│   ├── user_manager.py         # User registry, IDs, and metadata lookups
-│   ├── recommendation.py       # 2-hop candidate extraction & mutual friends ranking
-│   └── bfs.py                  # Manual BFS traversal & path backtracking via deque
+│   ├── graph.py                # Adjacency List & BFS Connected Components
+│   ├── user_manager.py         # Student registry & custom HashTable handle lookup
+│   ├── hash_table.py           # Custom Separate-Chaining Hash Table & Rehashing
+│   ├── bfs.py                  # Shortest Path, Degree Levels, Steps & NX Verification
+│   └── recommendation.py       # 2-Hop Traversal & Jaccard Interest Similarity
 │
-├── visualization/              # Visualization Pipeline
+├── ui/                         # Presentation Components & Styles
 │   ├── __init__.py
-│   └── graph_visualizer.py     # NetworkX spring layout & Matplotlib figure generator
+│   ├── state.py                # Session state initialization & cache clearing
+│   ├── styles.py               # Theme-adaptive CSS variables (Light + Dark mode)
+│   └── components.py           # PyVis interactive graph, student cards, legends
 │
-├── data/                       # Persistent Data Storage
-│   └── users.json              # 12-user sample network dataset
+├── pages/                      # Multipage Navigation Modules
+│   ├── 1_Dashboard.py          # Campus overview, metrics & top hub students
+│   ├── 2_Recommendations.py    # Ranked 2-hop + Jaccard recommendation cards
+│   ├── 3_Path_Finder.py        # BFS connection path & NetworkX verification badge
+│   ├── 4_BFS_Visualizer.py     # Interactive step-by-step traversal with narration
+│   ├── 5_Hash_Lab.py           # Custom HashTable inspector & O(1) vs O(N) benchmark
+│   ├── 6_Network_Editor.py     # Graph mutation, JSON sync & dataset generation
+│   └── 7_Theory_and_Viva.py    # Algorithmic theory & interactive viva exam quiz
 │
-├── utils/                      # Utilities & I/O Helpers
+├── data/                       # Datasets & Generators
+│   ├── users.json              # Primary CampusConnect dataset (40 students)
+│   ├── sample_small.json       # Canonical 12-user verification dataset
+│   └── generate_dataset.py     # Synthetic campus dataset generator (N=50/200/1000)
+│
+├── visualization/              # Visualization Helpers
 │   ├── __init__.py
-│   └── data_handler.py         # JSON serialization, schema validation & integrity checks
+│   └── graph_visualizer.py     # Fallback Matplotlib graph rendering & PNG export
 │
-├── tests/                      # Automated Unit Test Suite
-│   ├── __init__.py
-│   ├── test_graph.py           # Unit tests for graph construction & mutations
-│   ├── test_bfs.py             # Unit tests for BFS traversal & shortest paths
-│   └── test_recommendation.py  # Unit tests for candidate ranking & mutual friends
-│
-├── requirements.txt            # Python dependencies (Streamlit, NetworkX, Matplotlib, Pytest)
-├── VIVA_QUESTIONS.md           # Master Viva-Voce Study & Examination Guide
-├── README.md                   # Project documentation & reference manual
-└── .gitignore                  # Git ignore rules for virtualenvs, caches, and bytecode
+└── tests/                      # Automated Test Suite (149 Tests)
+    ├── test_bfs.py
+    ├── test_campus_features.py
+    ├── test_data_handler_features.py
+    ├── test_graph.py
+    ├── test_hash_table.py
+    ├── test_integration.py
+    ├── test_recommendation.py
+    ├── test_security_and_negative.py
+    ├── test_tdd_feature.py
+    ├── test_ui_smoke.py
+    └── test_visualization.py
 ```
 
 ---
 
-## 9. Master Viva-Voce Examination Guide
-
-Preparing for your college practical exam or final project viva?
-
-A dedicated, comprehensive study guide has been created in:
-👉 **[VIVA_QUESTIONS.md](file:///home/vaibhav/friend-recommendation-system/VIVA_QUESTIONS.md)**
-
-It covers every concept expected by university examiners to score **100% in your viva**:
-- **Section 1: Graph Theory Fundamentals** — Graph definitions $G = (V, E)$, social entities as nodes/edges, undirected vs directed relations, graph density formula $\frac{2E}{V(V-1)}$.
-- **Section 2: Graph Representation & Hashing** — Adjacency List vs Matrix space-time trade-offs ($O(V+E)$ vs $O(V^2)$), Python hash table mechanics (SipHash, bucket indexing, open addressing, load factor), memory analysis for 1 billion users.
-- **Section 3: Friend Recommendation Engine** — Triadic closure intuition, mutual friends formula $|Friends(u) \cap Friends(v)|$, 2-hop candidate extraction vs full-network scan, tie-breaking heuristics, and $O(\sum \text{deg}(f) + C \log C)$ complexity.
-- **Section 4: Breadth-First Search (BFS) Deep Dive** — Level-by-level monotonicity, `collections.deque` ($O(1)$ popleft) vs `list` ($O(N)$ pop(0)), cycle detection via `visited`, path reconstruction via `parent` dictionary, and BFS vs DFS comparison.
-- **Section 5: System Architecture & Persistence** — 4-layer design, Separation of Concerns (SoC), pure Python algorithms vs visualization-only NetworkX, JSON serialization.
-- **Section 6: Common Viva Trap Questions & Model Answers** — 10+ examiner trap questions (isolated node Liam, weighted graphs & Dijkstra, Six Degrees of Separation & Milgram's experiment, why NetworkX wasn't used for algorithms, etc.).
-- **Section 7: Real-World Industry Comparisons** — Facebook's People You May Know (PYMK) pipeline (TAO graph store, GBDT, graph embeddings) and LinkedIn's 1st/2nd/3rd degree connections using bidirectional BFS.
-
----
-
-## 10. Authors & Acknowledgements
-
-- **Author**: College Mini-Project Team
-- **Course**: Data Structures & Algorithms / Graph Theory
-- **Technologies**: Python, Streamlit, NetworkX, Matplotlib, Pytest
-
----
-*Developed with academic rigor for Data Structures and Algorithms coursework.*
+## 10. License & Academic Attribution
+Developed as an advanced academic college project in **Data Structures, Graph Theory & Algorithms**. Free to use and extend for academic and learning purposes.

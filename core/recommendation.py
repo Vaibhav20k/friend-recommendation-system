@@ -1,10 +1,14 @@
-"""Friend recommendation engine module.
+"""Friend and peer recommendation engine module for CampusConnect.
 
 Responsible for:
 - Finding friends-of-friends (depth 2 connections).
 - Filtering out direct friends and self.
 - Calculating mutual friend counts and intersection sets.
-- Ranking candidates in descending order of mutual friend counts.
+- Calculating Jaccard similarity of student interest profiles:
+    J(A, B) = |Interests(A) ∩ Interests(B)| / |Interests(A) ∪ Interests(B)|
+- Hybrid ranking: Mutual friends count (primary) -> Jaccard similarity (secondary) -> Name tie-breaker.
+- Producing human-readable recommendation explanations.
+- Filtering candidates by department/branch or year of study.
 """
 
 from collections import defaultdict
@@ -13,79 +17,85 @@ from typing import Any, Dict, List, Optional, Set
 from core.graph import SocialGraph
 
 
+def calculate_jaccard_similarity(set_a: Set[str], set_b: Set[str]) -> float:
+    """Calculate the Jaccard similarity coefficient between two sets of tags.
+
+    Formula:
+        J(A, B) = |A ∩ B| / |A ∪ B|
+
+    Special Cases:
+        - If both sets are empty, returns 0.0.
+
+    Args:
+        set_a: First set of string tags.
+        set_b: Second set of string tags.
+
+    Returns:
+        Float similarity score between 0.0 and 1.0, rounded to 3 decimal places.
+    """
+    if not set_a or not set_b:
+        return 0.0
+    intersection_len = len(set_a.intersection(set_b))
+    union_len = len(set_a.union(set_b))
+    if union_len == 0:
+        return 0.0
+    return round(intersection_len / union_len, 3)
+
+
 def get_friend_recommendations(
     graph: SocialGraph,
     user_id: str,
     limit: Optional[int] = None,
+    user_manager: Optional[Any] = None,
+    same_branch_only: bool = False,
+    same_year_only: bool = False,
+    branch_filter: Optional[str] = None,
+    year_filter: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
-    """Compute ranked friend recommendations based on mutual friend counts.
+    """Compute ranked friend recommendations based on mutual friends and Jaccard interest similarity.
 
     Explores 2-hop connections (friends-of-friends) in the social network graph,
-    filters out the query user and their existing direct friends, aggregates mutual
-    friends for each candidate, and ranks candidate users descending by mutual friend
-    count. Ties in mutual count are broken alphabetically by user ID.
+    filters out the query student and existing direct friends, computes mutual friend
+    intersections, calculates Jaccard similarity of interest tags, and ranks candidate
+    students descending by:
+        1. mutual_count (primary)
+        2. jaccard similarity (secondary)
+        3. student display name / ID (tie-breaker)
 
-    Algorithm:
-        1. Existence Check: Verify if `user_id` exists in `graph`. If not, return [].
-        2. Direct Friends: Fetch `direct_friends = graph.get_friends(user_id)`.
-           If `direct_friends` is empty, return [].
-        3. 2-Hop Traversal & Mutual Tracking:
-           For each direct friend `f` in `direct_friends`:
-               For each `candidate` in `graph.get_friends(f)`:
-                   If `candidate == user_id` or `candidate in direct_friends`:
-                       continue  # Exclude self and direct friends
-                   Track mutual friend `f` for `candidate`.
-        4. Mutual Count & Structure:
-           For each candidate, calculate `mutual_count = len(mutual_friends)`.
-           Store candidate ID, mutual count, and sorted list of mutual friends.
-        5. Candidate Ranking:
-           Sort candidates descending by `mutual_count`, with ties broken
-           alphabetically by `candidate_id` in ascending order:
-           key = (-mutual_count, candidate_id).
-        6. Limit Application:
-           If `limit` is provided and > 0, truncate to the top `limit` items.
-           If `limit` is provided and <= 0, return [].
-           If `limit` is None, return all ranked recommendations.
-
-    Complexity Analysis:
-        - Traversal Complexity (before sorting):
-          O(sum_{f in direct_friends} deg(f)).
-          Each direct friend `f` is inspected, and their degree `deg(f)` neighbors
-          are traversed. Set lookups (`candidate in direct_friends`) and insertions
-          run in O(1) average time via hash table lookups.
-          In the worst case, this traversal is bounded by O(|E|), where |E| is the
-          number of edges in the graph.
-        - Sorting Complexity:
-          O(C log C), where C is the number of unique 2-hop candidate users (C <= |V|).
-          Sorting the mutual friends list for each candidate takes O(M_c log M_c),
-          where M_c <= deg(user_id).
-        - Total Time Complexity:
-          O(sum_{f in direct_friends} deg(f) + C log C) average case, bounded by
-          O(|V| + |E| + C log C).
-        - Space Complexity:
-          O(F + C * M) auxiliary space, where F is the number of direct friends and
-          M is the average mutual friend count per candidate, bounded by O(|V| + |E|).
+    Time Complexity Analysis:
+        - Traversal Complexity: O(sum_{f in direct_friends} deg(f)) bounded by O(|E|).
+        - Profile Intersection: O(|Interests_u| + |Interests_c|) per candidate.
+        - Sorting: O(C log C) where C is the count of 2-hop candidates.
+        - Total: O(|V| + |E| + C log C) optimal.
 
     Args:
         graph: The SocialGraph instance representing the social network.
         user_id: Unique string identifier of the user seeking recommendations.
         limit: Optional maximum number of recommendations to return.
-               If provided and > 0, returns top `limit` recommendations.
-               If provided and <= 0, returns an empty list.
-               If None, returns all eligible recommendations.
+        user_manager: Optional UserManager instance for student profile access.
+        same_branch_only: If True and user_manager provided, only recommends students in same branch.
+        same_year_only: If True and user_manager provided, only recommends students in same year.
+        branch_filter: Optional specific branch to filter candidates by (e.g. "CSE").
+        year_filter: Optional specific year of study to filter candidates by (e.g. 2).
 
     Returns:
         List[Dict[str, Any]]: A ranked list of recommendation dictionaries:
             [
                 {
-                    "user_id": candidate_id,
+                    "user_id": str,
+                    "name": str,
                     "mutual_count": int,
-                    "mutual_friends": List[str]  # Sorted alphabetically
+                    "mutual_friends": List[str],
+                    "shared_interests": List[str],
+                    "jaccard": float,
+                    "branch": str,
+                    "year": int,
+                    "score_explanation": str
                 },
                 ...
             ]
         Returns an empty list [] if user does not exist, has no direct friends,
-        or has no candidate friends-of-friends.
+        or has no eligible 2-hop candidates.
     """
     if not isinstance(user_id, str):
         return []
@@ -97,8 +107,14 @@ def get_friend_recommendations(
     if not direct_friends:
         return []
 
-    candidate_mutuals: Dict[str, Set[str]] = defaultdict(set)
+    # Get query user's profile attributes if user_manager is available
+    user_profile = user_manager.get_user(user_id) if user_manager is not None else None
+    user_interests: Set[str] = set(user_profile.get("interests", [])) if user_profile else set()
+    user_branch: Optional[str] = user_profile.get("branch") if user_profile else None
+    user_year: Optional[int] = user_profile.get("year") if user_profile else None
 
+    # Step 1: Collect 2-hop candidates and aggregate mutual friends
+    candidate_mutuals: Dict[str, Set[str]] = defaultdict(set)
     for f in direct_friends:
         for candidate in graph.get_friends(f):
             if candidate == user_id or candidate in direct_friends:
@@ -108,17 +124,71 @@ def get_friend_recommendations(
     if not candidate_mutuals:
         return []
 
-    recommendations: List[Dict[str, Any]] = [
-        {
-            "user_id": candidate_id,
-            "mutual_count": len(mutual_set),
-            "mutual_friends": sorted(mutual_set),
-        }
-        for candidate_id, mutual_set in candidate_mutuals.items()
-    ]
+    # Step 2: Build candidate records and apply filters
+    recommendations: List[Dict[str, Any]] = []
 
-    # Rank candidates descending by mutual_count, breaking ties alphabetically by candidate_id
-    recommendations.sort(key=lambda item: (-item["mutual_count"], item["user_id"]))
+    for candidate_id, mutual_set in candidate_mutuals.items():
+        cand_profile = user_manager.get_user(candidate_id) if user_manager is not None else None
+        cand_name = cand_profile.get("name", candidate_id) if cand_profile else candidate_id
+        cand_branch = cand_profile.get("branch", "CSE") if cand_profile else "CSE"
+        cand_year = cand_profile.get("year", 1) if cand_profile else 1
+        cand_interests: Set[str] = set(cand_profile.get("interests", [])) if cand_profile else set()
+
+        # Apply branch filters
+        if same_branch_only and user_branch and cand_branch != user_branch:
+            continue
+        if branch_filter and cand_branch.upper() != branch_filter.strip().upper():
+            continue
+
+        # Apply year filters
+        if same_year_only and user_year and cand_year != user_year:
+            continue
+        if year_filter and cand_year != year_filter:
+            continue
+
+        # Compute Jaccard similarity and shared interests
+        shared_interests = sorted(user_interests.intersection(cand_interests))
+        jaccard = calculate_jaccard_similarity(user_interests, cand_interests)
+
+        # Build human-readable score explanation
+        m_count = len(mutual_set)
+        mutual_str = f"{m_count} mutual friend{'s' if m_count != 1 else ''}"
+        if shared_interests:
+            interests_str = f"shares {', '.join(shared_interests)}"
+        else:
+            interests_str = "no shared interests"
+        explanation = f"{mutual_str} · {interests_str}"
+
+        recommendations.append(
+            {
+                "user_id": candidate_id,
+                "name": cand_name,
+                "mutual_count": m_count,
+                "mutual_friends": sorted(mutual_set),
+                "shared_interests": shared_interests,
+                "jaccard": jaccard,
+                "branch": cand_branch,
+                "year": cand_year,
+                "score_explanation": explanation,
+            }
+        )
+
+    if not recommendations:
+        return []
+
+    # Rank candidates:
+    # 1. mutual_count descending (-item["mutual_count"])
+    # 2. jaccard similarity descending (-item["jaccard"])
+    # 3. display name alphabetically (item["name"].lower())
+    # 4. user_id tie-breaker (item["user_id"])
+    recommendations.sort(
+        key=lambda item: (
+            -item["mutual_count"],
+            -item["jaccard"],
+            item["name"].lower() if isinstance(item["name"], str) else "",
+            item["user_id"],
+        )
+    )
 
     if limit is not None:
         if isinstance(limit, bool) or not isinstance(limit, int) or limit <= 0:
@@ -201,5 +271,3 @@ def get_mutual_friends_details(
         "mutual_friends": mutual_friends,
         "mutual_friends_detailed": detailed,
     }
-
-

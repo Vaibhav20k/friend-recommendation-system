@@ -8,6 +8,8 @@ Responsible for:
 """
 
 from typing import Any, Dict, List, Optional, Set
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.figure
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches

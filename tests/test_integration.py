@@ -17,7 +17,10 @@ from core.bfs import find_shortest_connection
 from core.recommendation import get_friend_recommendations
 from utils.data_handler import DataHandler
 
-DATA_FILE = "/home/vaibhav/friend-recommendation-system/data/users.json"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_FILE = os.path.join(BASE_DIR, "data", "sample_small.json")
+if not os.path.exists(DATA_FILE):
+    DATA_FILE = os.path.join(BASE_DIR, "data", "users.json")
 
 
 @pytest.fixture

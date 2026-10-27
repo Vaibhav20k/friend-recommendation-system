@@ -1,12 +1,13 @@
 # Software Quality Assurance, Integration Testing, TDD & Application Security Report
 
-**Project Title:** Smart Friend Recommendation & Social Network Analysis System  
-**Repository Path:** `/home/vaibhav/friend-recommendation-system`  
+**Project Title:** CampusConnect — Advanced Campus Social Network Explorer  
+**Repository:** `friend-recommendation-system`  
 **Engineer Roles:** Senior QA Engineer, Test Automation Engineer, Application Security Analyst  
 **Date of Audit:** October 2026  
-**Test Framework:** Pytest 9.1.1 (Python 3.14.8 on Linux x86_64)  
-**Total Repository Test Count:** 109 Tests  
-**Overall Suite Pass Rate:** 100% (109 Passed, 0 Failed, 0 Skipped, 0 Errors)
+**Test Framework:** Pytest 9.1.1 (Python 3.12 / 3.14 on Windows, Linux, macOS)  
+**Total Repository Test Count:** 149 Tests  
+**Overall Suite Pass Rate:** 100% (149 Passed, 0 Failed, 0 Skipped, 0 Errors)
+**Core Engine Code Coverage:** 95% across `core/` and `utils/`
 
 ---
 
@@ -25,24 +26,22 @@
 
 ## 1. Executive Summary
 
-This report documents an end-to-end Quality Assurance (QA), Test Automation, Test-Driven Development (TDD), and Application Security (AppSec) review conducted on the **Smart Friend Recommendation System**. 
+This report documents an end-to-end Quality Assurance (QA), Test Automation, Test-Driven Development (TDD), and Application Security (AppSec) review conducted on the **CampusConnect** system. 
 
 The system implements core computer science graph algorithms:
 - **Graph Topology:** Undirected social network graph via adjacency lists (`Dict[str, Set[str]]` in `core/graph.py`).
-- **Identity Registry:** User profile indexing and search (`UserManager` in `core/user_manager.py`).
+- **Identity Registry & Hash Index:** Student profile indexing and custom HashTable lookups (`UserManager` and `HashTable`).
 - **Graph Traversal:** Shortest path and degrees of separation computation via Breadth-First Search (`core/bfs.py`).
-- **Recommendation Engine:** 2-hop friends-of-friends ranking with mutual friend aggregation (`core/recommendation.py`).
-- **Data Persistence:** JSON serialization and deserialization (`utils/data_handler.py`).
-- **Visualization:** Matplotlib and NetworkX graph plotting (`visualization/graph_visualizer.py`).
+- **Recommendation Engine:** 2-hop friends-of-friends ranking with Jaccard similarity scoring (`core/recommendation.py`).
+- **Data Persistence:** JSON serialization, deserialization, and schema validation (`utils/data_handler.py`).
+- **Interactive Visualization:** PyVis Vis.js physics simulation and Matplotlib plotting.
 
 ### Key Audit Accomplishments
-1. **Test Suite Expansion:** Expanded the test suite from **46 initial unit tests to 109 automated tests** across 7 test modules.
-2. **TDD Demonstration:** Implemented `get_network_metrics(graph)` and `get_mutual_friends_details(graph, u, v, user_manager)` using the strict **Red $\rightarrow$ Green $\rightarrow$ Refactor** lifecycle.
-3. **Integration Workflows:** Created `tests/test_integration.py` to validate multi-step state mutations, including dynamic friend recommendation evolution, BFS shortcut rerouting, and cascading user removal.
-4. **Aggressive Negative Testing:** Built `tests/test_security_and_negative.py` to test self-friendship injection, duplicate edge spamming, unhashable types, buffer abuse (100k character payloads), injection strings, and pathological graph topologies ($C_3, C_4, C_5, K_{3,3}, K_{10}, S_{50}$, wheel graphs, and disconnected graphs).
-5. **AppSec Hardening:** Identified and mitigated **7 critical defects and security vulnerabilities**, including Path Traversal (CWE-22) in filesystem handlers, unhashable type injection Denial-of-Service (DoS), whitespace data pollution, and zero-division vulnerabilities.
-
----
+1. **Test Suite Expansion:** Expanded the test suite to **149 automated tests** across 11 test modules.
+2. **Custom HashTable Validation:** Created `tests/test_hash_table.py` testing polynomial rolling hashing, separate chaining, load factor capping ($\le 0.75$), and dynamic rehashing.
+3. **CampusConnect Features Coverage:** Created `tests/test_campus_features.py` and `tests/test_data_handler_features.py` covering BFS levels, BFS generator steps, NetworkX oracle agreement, and Jaccard similarity.
+4. **UI Smoke Testing:** Created `tests/test_ui_smoke.py` executing all 7 pages headlessly using `streamlit.testing.v1.AppTest`.
+5. **AppSec Hardening:** Identified and mitigated critical defects including cross-platform path traversal vulnerabilities (Windows and Linux), unhashable types, whitespace data pollution, and duplicate handle collisions.
 
 ## 2. Test Suite Architecture & Verification Matrix
 

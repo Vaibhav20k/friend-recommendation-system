@@ -23,6 +23,7 @@ Time Complexities (Average Case):
 - clear: O(1) dictionary reset
 """
 
+from collections import deque
 from typing import Any, Dict, List, Set, Tuple
 
 
@@ -274,6 +275,104 @@ class SocialGraph:
         """
         return {u: set(friends) for u, friends in self._adj.items()}
 
+    def degree(self, user_id: str) -> int:
+        """Return the degree (number of friends) of a given user.
+
+        Time Complexity:
+            O(1) average lookup.
+
+        Args:
+            user_id: Unique string identifier for the user.
+
+        Returns:
+            Integer degree, or 0 if user does not exist in graph.
+        """
+        if not isinstance(user_id, str):
+            return 0
+        user_id = user_id.strip()
+        return len(self._adj.get(user_id, set()))
+
+    def neighbors(self, user_id: str) -> Set[str]:
+        """Return the set of neighbor (friend) user IDs for a given user.
+
+        Alias for get_friends(user_id). Returns a defensive copy.
+
+        Args:
+            user_id: Unique string identifier for the user.
+
+        Returns:
+            Set of friend user IDs, or empty set if user not found.
+        """
+        return self.get_friends(user_id)
+
+    def edges(self) -> List[Tuple[str, str]]:
+        """Return a sorted list of unique undirected edges in the graph.
+
+        Each edge is represented as a normalized tuple (min(u, v), max(u, v)).
+
+        Time Complexity:
+            O(V + E log E) - Traverses adjacency list and sorts unique edges.
+
+        Returns:
+            List of unique undirected edge tuples sorted deterministically.
+        """
+        seen: Set[Tuple[str, str]] = set()
+        for u, nbrs in self._adj.items():
+            for v in nbrs:
+                edge = (min(u, v), max(u, v))
+                seen.add(edge)
+
+        def edge_sort_key(e: Tuple[str, str]) -> Tuple[int, int, str, int, int, str]:
+            u, v = e[0], e[1]
+            u_key = (0, int(u), u) if u.isdigit() else (1, 0, u)
+            v_key = (0, int(v), v) if v.isdigit() else (1, 0, v)
+            return u_key + v_key
+
+        return sorted(seen, key=edge_sort_key)
+
+    def connected_components(self) -> List[List[str]]:
+        """Compute all connected components in the graph using manual BFS traversal.
+
+        Does NOT use NetworkX; implemented in pure Python from first principles.
+
+        Time Complexity:
+            O(V + E) - Standard BFS component traversal across all vertices.
+
+        Returns:
+            List of connected components. Each component is a sorted list of user IDs.
+            Components are ordered by size descending, tie-broken by first user ID.
+        """
+        visited: Set[str] = set()
+        components: List[List[str]] = []
+
+        # Sort vertices for deterministic iteration
+        def node_sort_key(u: str) -> Tuple[int, int, str]:
+            return (0, int(u), u) if u.isdigit() else (1, 0, u)
+
+        all_nodes = sorted(self._adj.keys(), key=node_sort_key)
+
+        for node in all_nodes:
+            if node not in visited:
+                component: List[str] = []
+                queue: deque[str] = deque([node])
+                visited.add(node)
+
+                while queue:
+                    curr = queue.popleft()
+                    component.append(curr)
+
+                    for nbr in sorted(self._adj.get(curr, set()), key=node_sort_key):
+                        if nbr not in visited:
+                            visited.add(nbr)
+                            queue.append(nbr)
+
+                component.sort(key=node_sort_key)
+                components.append(component)
+
+        # Sort components: largest first, then by first node ID
+        components.sort(key=lambda c: (-len(c), node_sort_key(c[0]) if c else (1, 0, "")))
+        return components
+
     def clear(self) -> None:
         """Reset the graph to an empty state, clearing all nodes and edges.
 
@@ -349,6 +448,8 @@ def get_network_metrics(graph: SocialGraph) -> Dict[str, Any]:
         [(uid, deg) for uid, deg in degrees.items() if deg == max_deg]
     )
 
+    components = graph.connected_components()
+
     return {
         "total_users": v,
         "total_friendships": e,
@@ -359,5 +460,7 @@ def get_network_metrics(graph: SocialGraph) -> Dict[str, Any]:
         "max_degree": max_deg,
         "max_degree_users": max_degree_users,
         "degrees": degrees,
+        "connected_components": components,
+        "component_count": len(components),
     }
 
